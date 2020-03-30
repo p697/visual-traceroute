@@ -66,15 +66,22 @@ def generateJson(info):
         i2['from'] = '{}, {}'.format(info[i][1], info[i][2])
         i2['to'] = '{}, {}'.format(info[i+1][1], info[i+1][2])
         route.append(i2)
+
         i3 = {}
         i3['from'] = info[i][0]
         i3['fromIP'] = info[i][3]
         i3['to'] = info[i+1][0]
         i3['toIP'] = info[i+1][3]
         local.append(i3)
+        
         i4 = {}
-        i4['x'] = info[i+1][1]
-        i4['y'] = info[i+1][2]
+        i4['x'] = info[i][1]
+        i4['y'] = info[i][2]
+        dot.append(i4)
+        if i == len(info)-2:
+            i4 = {}
+            i4['x'] = info[i+1][1]
+            i4['y'] = info[i+1][2]
         dot.append(i4)
 
     data['route'] = route

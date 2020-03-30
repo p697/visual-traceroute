@@ -53,20 +53,21 @@
     }
 
     #wait {
-      color: #eee;
+      color: #ddd;
       display: none;
       margin-top: 18px;
-      opacity: 0.6;
+      opacity: 0.75;
       width: 316px;
     }
 
     .span {
       display: block;
       font-size: 15px;
+      margin-bottom: 2;
     }
 
     .detail-span {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
 
@@ -96,15 +97,15 @@
       wait.style.display = 'block'
       wait.innerHTML = '根据结点个数和线路时延，平均用时约1~5分钟，请等待...'
       fetch("getRoute?ip=" + ip)
-        .then(res => res.text)
+        .then(res => res.json())
         .then(data => {
+          console.log(data);
           document.getElementById('map').innerHTML = ''
           drawRoute(data)
           btn.innerHTML = '确定'
           btn.style.color = '#333'
           btn.style.cursor = 'auto'
           btn.style.pointerEvents = 'auto'
-          wait.innerHTML = '追踪完成'
         })
     }
 
@@ -118,7 +119,6 @@
           zoom: 2.9142882493605033
         })
       });
-      data = JSON.parse(data)
       const flydata = eval(data.route).map(item => {
         const latlng1 = item.from.split(',').map(e => { return e * 1; });
         const latlng2 = item.to.split(',').map(e => { return e * 1; });
@@ -177,7 +177,7 @@
       var ips = data.local.map((loc, index) => {
         return loc.fromIP
       })
-      location.push(data.local[data.local.length-1].toIP)
+      ips.push(data.local[data.local.length-1].toIP)
 
       var text = ''
       for(let i=0; i<ips.length; i++) {
@@ -195,6 +195,7 @@
       fetch("static/route.json")
         .then(res => res.text())
         .then(data => {
+          data = JSON.parse(data)
           drawRoute(data)
         });
     }
