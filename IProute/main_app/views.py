@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from . import procs
+import json
 
 def index(request):
     return render(request, 'main_app/index.html')
@@ -8,10 +9,11 @@ def index(request):
 def getRoute(request):
     ip = request.GET.get('ip')
 
-    state = procs.create(ip)
+    data = procs.create(ip)
 
-    if state:
-        res = HttpResponse('true')
+    if data:
+        jsonData = json.dumps(data)
+        res = HttpResponse(jsonData)
         res['Access-Control-Allow-Origin'] = '*'
         res['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS' 
         res['Access-Control-Max-Age'] = '1000'

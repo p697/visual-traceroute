@@ -53,12 +53,23 @@
     }
 
     #wait {
-      color: #ddd;
+      color: #eee;
       display: none;
       margin-top: 18px;
       opacity: 0.6;
       width: 316px;
     }
+
+    .span {
+      display: block;
+      font-size: 15px;
+    }
+
+    .detail-span {
+      margin-bottom: 8px;
+    }
+
+
   </style>
 </head>
 
@@ -68,6 +79,7 @@
   <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
   <script src="https://unpkg.com/@antv/l7"></script>
   <script>
+
 
     isInput = () => {
       var btn = document.getElementById('submit')
@@ -82,11 +94,12 @@
       btn.style.cursor = 'not-allowed'
       btn.style.pointerEvents = 'none'
       wait.style.display = 'block'
+      wait.innerHTML = '根据结点个数和线路时延，平均用时约1~5分钟，请等待...'
       fetch("getRoute?ip=" + ip)
         .then(res => res.text)
         .then(data => {
           document.getElementById('map').innerHTML = ''
-          drawRoute()
+          drawRoute(data)
           btn.innerHTML = '确定'
           btn.style.color = '#333'
           btn.style.cursor = 'auto'
@@ -95,8 +108,8 @@
         })
     }
 
-    drawRoute = () => {
-      var scene = new L7.Scene({
+    drawRoute = (data) => {
+      const scene = new L7.Scene({
         id: 'map',
         map: new L7.Mapbox({
           pitch: 0,
@@ -105,54 +118,88 @@
           zoom: 2.9142882493605033
         })
       });
-      fetch("static/route.csv")
+      data = JSON.parse(data)
+      const flydata = eval(data.route).map(item => {
+        const latlng1 = item.from.split(',').map(e => { return e * 1; });
+        const latlng2 = item.to.split(',').map(e => { return e * 1; });
+        return { coord: [latlng1, latlng2] };
+      });
+
+      const layer = new L7.LineLayer({})
+        .source(flydata, {
+          parser: {
+            type: 'json',
+            coordinates: 'coord'
+          }
+        })
+        .color('#b97feb')
+        // .shape('arc3d')
+        .size(1.5)
+        .active(true)
+        .animate({
+          interval: 1.2,
+          trailLength: 1.8,
+          duration: 1
+        })
+        .style({
+          opacity: 1
+        });
+      const dotPoint = new L7.PointLayer()
+        .source(data.dot, {
+          parser: {
+            type: 'json',
+            x: 'x',
+            y: 'y'
+          }
+        })
+        .shape('circle')
+        .color('#abc7e9')
+        .animate({
+          speed: 0.8
+        }
+        )
+        .size(30)
+        .style({
+          opacity: 1.0
+        });
+      scene.addLayer(layer);
+      scene.addLayer(dotPoint);
+      showDetail(data)
+    }
+
+
+    showDetail = (data) => {
+      var wait = document.getElementById('wait')
+      var location = data.local.map((loc, index) => {
+        return loc.from
+      })
+      location.push(data.local[data.local.length-1].to)
+      var ips = data.local.map((loc, index) => {
+        return loc.fromIP
+      })
+      location.push(data.local[data.local.length-1].toIP)
+
+      var text = ''
+      for(let i=0; i<ips.length; i++) {
+        text += `<span class="detail-span span">
+        <span class="span">`+ location[i] +`</span>
+        <span class="span">`+ ips[i] +`</span>
+        </span>`
+      }
+      wait.innerHTML = text
+      wait.style.display = 'block'
+    }
+
+
+    firstLoad = () => {
+      fetch("static/route.json")
         .then(res => res.text())
         .then(data => {
-          const layer = new L7.LineLayer({})
-            .source(data, {
-              parser: {
-                type: 'csv',
-                x: 'lng1',
-                y: 'lat1',
-                x1: 'lng2',
-                y1: 'lat2'
-              }
-            })
-            // .shape('arc')
-            .size(1.5)
-            .color('#b97feb')
-            .active(true)
-            .animate({
-              interval: 2,
-              trailLength: 1.2,
-              duration: 1
-            })
-            .style({
-              opacity: 1
-            });
-          const dotPoint = new L7.PointLayer()
-            .source(data, {
-              parser: {
-                type: 'csv',
-                x: 'lng1',
-                y: 'lat1'
-              }
-            })
-            .shape('circle')
-            .color('#abc7e9')
-            .animate({
-              speed: 0.8
-            }
-            )
-            .size(30)
-            .style({
-              opacity: 1.0
-            });
-          scene.addLayer(layer);
-          scene.addLayer(dotPoint);
+          drawRoute(data)
         });
     }
-    drawRoute()
+
+    firstLoad()
 
 
 
@@ -161,7 +208,7 @@
   <div class="input">
     <input id="ip" type="text" placeholder="输入目标ip" oninput="isInput()" />
     <button id="submit" onclick="get(this)">确定</button>
-    <span id="wait">根据结点个数和线路时延，平均用时约1~5分钟，请等待...</span>
+    <span id="wait"></span>
   </div>
 
 </body>
