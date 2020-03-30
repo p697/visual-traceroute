@@ -85,6 +85,7 @@
       fetch("getRoute?ip=" + ip)
         .then(res => res.text)
         .then(data => {
+          document.getElementById('map').innerHTML = ''
           drawRoute()
           btn.innerHTML = '确定'
           btn.style.color = '#333'
@@ -95,7 +96,7 @@
     }
 
     drawRoute = () => {
-      const scene = new L7.Scene({
+      var scene = new L7.Scene({
         id: 'map',
         map: new L7.Mapbox({
           pitch: 0,
