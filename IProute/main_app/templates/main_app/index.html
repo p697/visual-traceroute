@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>IProute</title>
+  <style>
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    html,
+    body {
+      overflow: hidden;
+      margin: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .input {
+      position: fixed;
+      z-index: 99;
+      margin: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      width: 320px;
+    }
+
+    #ip {
+      justify-content: center;
+      padding: 6px;
+      font-size: 18px;
+      border-radius: 2px;
+      color: #333;
+      width: 200px;
+      /* float: left; */
+    }
+
+    #submit {
+      display: none;
+      margin-left: 12px;
+      justify-content: center;
+      padding: 5.5px 8px 5.5px 8px;
+      font-size: 16px;
+      border-radius: 2px;
+      color: #333;
+    }
+
+    #wait {
+      color: #ddd;
+      display: none;
+      margin-top: 18px;
+      opacity: 0.6;
+      width: 316px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+  <script src="https://unpkg.com/@antv/l7"></script>
+  <script>
+
+    isInput = () => {
+      var btn = document.getElementById('submit')
+      btn.style.display = 'block'
+    }
+
+    get = (btn) => {
+      var ip = document.getElementById('ip').value
+      var wait = document.getElementById('wait')
+      btn.innerHTML = '正在追踪'
+      btn.style.color = '#666'
+      btn.style.cursor = 'not-allowed'
+      btn.style.pointerEvents = 'none'
+      wait.style.display = 'block'
+      fetch("getRoute?ip=" + ip)
+        .then(res => res.text)
+        .then(data => {
+          drawRoute()
+          btn.innerHTML = '确定'
+          btn.style.color = '#333'
+          btn.style.cursor = 'auto'
+          btn.style.pointerEvents = 'auto'
+          wait.innerHTML = '追踪完成'
+        })
+    }
+
+    drawRoute = () => {
+      const scene = new L7.Scene({
+        id: 'map',
+        map: new L7.Mapbox({
+          pitch: 0,
+          style: 'dark',
+          center: [107.77791556935472, 35.443286920228644],
+          zoom: 2.9142882493605033
+        })
+      });
+      fetch("static/route.csv")
+        .then(res => res.text())
+        .then(data => {
+          const layer = new L7.LineLayer({})
+            .source(data, {
+              parser: {
+                type: 'csv',
+                x: 'lng1',
+                y: 'lat1',
+                x1: 'lng2',
+                y1: 'lat2'
+              }
+            })
+            // .shape('arc')
+            .size(1.5)
+            .color('#b97feb')
+            .active(true)
+            .animate({
+              interval: 2,
+              trailLength: 1.2,
+              duration: 1
+            })
+            .style({
+              opacity: 1
+            });
+          const dotPoint = new L7.PointLayer()
+            .source(data, {
+              parser: {
+                type: 'csv',
+                x: 'lng1',
+                y: 'lat1'
+              }
+            })
+            .shape('circle')
+            .color('#abc7e9')
+            .animate({
+              speed: 0.8
+            }
+            )
+            .size(30)
+            .style({
+              opacity: 1.0
+            });
+          scene.addLayer(layer);
+          scene.addLayer(dotPoint);
+        });
+    }
+    drawRoute()
+
+
+
+  </script>
+
+  <div class="input">
+    <input id="ip" type="text" placeholder="输入目标ip" oninput="isInput()" />
+    <button id="submit" onclick="get(this)">确定</button>
+    <span id="wait">根据结点个数和线路时延，平均用时约1~5分钟，请等待...</span>
+  </div>
+
+</body>
+
+</html>
